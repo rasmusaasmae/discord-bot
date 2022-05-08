@@ -38,6 +38,10 @@ class Movie {
       })
       .then((res) => {
         const movies = res["data"]["data"]["movies"];
+        if (movies == undefined) {
+          channel.send(`No movies found for query "${query}"`);
+          return;
+        }
         const embedResults = [];
         const selectMenuResults = [];
         for (let movie of movies) {
@@ -60,7 +64,7 @@ class Movie {
           selectMenuResults.push({
             label: title_long,
             description: url,
-            value: `${id}-${title_long}`,
+            value: `${id}:::${title_long}`,
           });
 
           this.searchResult[`${id}`] = movie;

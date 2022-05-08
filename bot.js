@@ -32,7 +32,7 @@ client.on("interactionCreate", (interaction) => {
   if (!interaction.isSelectMenu()) return;
 
   if (interaction.customId === "movieAddMenu") {
-    const res = interaction.values[0].split("-");
+    const res = interaction.values[0].split(":::");
     movie.addMovie(res[0]);
     interaction.update({
       content: `${res[1]} was added to the movie list.`,
