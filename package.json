@@ -5,7 +5,11 @@
   "main": "bot.js",
   "author": "Rasmus",
   "dependencies": {
+    "@discordjs/rest": "^0.4.1",
+    "axios": "^0.27.2",
+    "discord-api-types": "^0.32.1",
     "discord.io": "https://github.com/woor/discord.io/tarball/gateway_v6",
+    "discord.js": "^13.6.0",
     "winston": "^3.7.2"
   },
   "scripts": {

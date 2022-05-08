@@ -1,52 +1,45 @@
-let Discord = require("discord.io");
-var logger = require("winston");
-var auth = require("./auth.json");
+const { Client, Intents } = require("discord.js");
+const { token } = require("./auth.json");
+const Movie = require("./movie");
 
-// Configure logger settings
-logger.remove(logger.transports.Console);
-logger.add(new logger.transports.Console(), {
-  colorize: true,
-});
-logger.level = "debug";
-
-// Initialize Discord Bot
-
-let bot = new Discord.Client({
-  token: auth.token,
-  autorun: true,
+const client = new Client({
+  intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES],
 });
 
-bot.on("ready", function (evt) {
-  logger.info("Connected");
-  logger.info("Logged in as: ");
-  logger.info(bot.username + " - (" + bot.id + ")");
+const movie = new Movie(client);
+
+client.on("ready", (e) => {
+  console.log(`Bot ${e.user.username} (${e.user.id}) ready`);
 });
 
-bot.on("message", function (user, userID, channelID, message, evt) {
-  // Our bot needs to know if it will execute a command
-  // It will listen for messages that will start with `!`
+const prefix = "!";
 
-  if (message.substring(0, 1) == "!") {
-    let args = message.substring(1).split(" ");
-    let cmd = args[0];
-    args = args.splice(1);
+client.on("messageCreate", (message) => {
+  if (!message.content.startsWith(prefix) || message.author.bot) return; // ignore if no prefix or a bot
 
-    switch (cmd) {
-      // !ping
-      case "ping":
-        bot.sendMessage({
-          to: channelID,
-          message: "Pong!",
-        });
-        break;
-      case "repeat":
-        bot.sendMessage({
-          to: channelID,
-          message: `Here you go: ${args[0].repeat(5)}`,
-        });
-        break;
+  let args = message.content.split(" ");
+  const cmd = args[0].substring(1);
+  args = args.splice(1);
 
-      // Just add any case commands if you want to..
-    }
+  switch (cmd) {
+    case "movie":
+      movie.action(message.channel, args);
+      break;
   }
 });
+
+client.on("interactionCreate", (interaction) => {
+  if (!interaction.isSelectMenu()) return;
+
+  if (interaction.customId === "movieAddMenu") {
+    const res = interaction.values[0].split("-");
+    movie.addMovie(res[0]);
+    interaction.update({
+      content: `${res[1]} was added to the movie list.`,
+      embeds: [],
+      components: [],
+    });
+  }
+});
+
+client.login(token);
