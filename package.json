@@ -2,17 +2,20 @@
   "name": "invaliid-bot",
   "version": "1.0.0",
   "description": "Does many things but sucks at everything",
-  "main": "bot.js",
+  "main": "main.js",
   "author": "Rasmus",
   "dependencies": {
     "@discordjs/rest": "^0.4.1",
     "axios": "^0.27.2",
+    "chalk": "^4.1.2",
     "discord-api-types": "^0.32.1",
     "discord.io": "https://github.com/woor/discord.io/tarball/gateway_v6",
     "discord.js": "^13.6.0",
+    "enmap": "^5.9.0",
+    "underscore": "^1.13.3",
     "winston": "^3.7.2"
   },
   "scripts": {
-    "start": "node bot.js"
+    "start": "node main.js"
   }
 }
