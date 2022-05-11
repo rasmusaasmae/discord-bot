@@ -26,6 +26,8 @@ exports.run = (client, message, args) => {
       "movie clear",
       "Clears all movie related messages sent by this bot"
     )
+    .addField("movie randomise", "Randomises the order of the movies")
+    .addField("movie torrents", "Lists the movies with their torrents")
     .setFooter({
       text: "Invaliid made by Rasmus#1234",
       iconURL:

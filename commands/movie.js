@@ -38,6 +38,7 @@ exports.run = (client, message, args) => {
       randomiseMovies(message);
       break;
     case "torrents":
+      getTorrents(message);
       break;
     case "torrent":
       break;
@@ -85,8 +86,10 @@ function searchMovies(message, query) {
           value: "NO_MOVIE_CHOSEN",
         },
       ];
+      const quality = { "1080p": 20, "720p": 10 };
+      const type = { bluray: 2, web: 1 };
       for (let movie of movies) {
-        const { id, imdb_code } = movie;
+        const { id, imdb_code, torrents } = movie;
         let { title_long } = movie;
         const imdb = `https://www.imdb.com/title/${imdb_code}/`;
 
@@ -103,8 +106,17 @@ function searchMovies(message, query) {
           label: title_long,
           value: id.toString(),
         });
-
-        searchResults[guildId][movie.id.toString()] = movie;
+        let torrent;
+        let torrent_score = 0;
+        for (t of torrents) {
+          const t_score = quality[t.quality] + type[t.type];
+          if (t_score > torrent_score) {
+            torrent = t;
+            torrent_score = t_score;
+          }
+        }
+        const m = { id, title_long, torrent, imdb_code };
+        searchResults[guildId][movie.id.toString()] = m;
       }
 
       embed
@@ -241,4 +253,38 @@ function randomiseMovies(message) {
   const { guildId } = message;
   movieList[guildId] = _.shuffle(movieList[guildId]);
   listMovies(message);
+}
+
+function getTorrents(message) {
+  const { channel, guildId, author } = message;
+
+  const embed = new discord.MessageEmbed().setColor(color).setAuthor({
+    name: author.username,
+    iconURL: author.avatarURL(),
+  });
+
+  if (movieList[guildId].length === 0) {
+    embed.setTitle("There are no movies in the list");
+    channel
+      .send({ embeds: [embed] })
+      .then((msg) => (messages[guildId][msg.id.toString()] = msg));
+    return;
+  }
+  const movieFields = [];
+  for (movie of movieList[guildId]) {
+    movieFields.push({
+      name: movie.title_long,
+      value: `${movie.torrent.url}`,
+    });
+  }
+  embed
+    .setTitle(
+      movieFields.length === 1
+        ? "There is 1 movie in the list:"
+        : `There are ${movieFields.length} movies in the list:`
+    )
+    .addFields(...movieFields);
+  channel
+    .send({ embeds: [embed] })
+    .then((msg) => (messages[guildId][msg.id.toString()] = msg));
 }
