@@ -67,7 +67,7 @@ function searchMovies(message, query) {
     return;
   }
   axios
-    .get("https://yts.torrentbay.to/api/v2/list_movies.json", {
+    .get("http://yts.torrentbay.to/api/v2/list_movies.json", {
       params: { query_term: query },
     })
     .then((res) => {
@@ -142,6 +142,11 @@ function searchMovies(message, query) {
     .catch((error) => {
       console.log(chalk.red(`Error in searchMovies(message, ${query})`));
       console.error(error);
+      embed.setTitle(`Error occurred for query '${query}'`);
+      channel
+        .send({ embeds: [embed] })
+        .then((msg) => (messages[guildId][msg.id.toString()] = msg));
+      return;
     });
 }
 
