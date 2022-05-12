@@ -67,7 +67,7 @@ function searchMovies(message, query) {
     return;
   }
   axios
-    .get("http://yts.torrentbay.to/api/v2/list_movies.json", {
+    .get("https://yts.torrentbay.to/api/v2/list_movies.json", {
       params: { query_term: query },
     })
     .then((res) => {
