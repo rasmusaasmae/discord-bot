@@ -35,8 +35,8 @@ fs.readdir("./commands/", (err, files) => {
 
 // Set activity when bot is ready
 client.on("ready", () => {
-  client.user.setActivity(`for the command ${config.prefix}help`, {
-    type: "COMPETING",
+  client.user.setActivity(`${config.prefix}help`, {
+    type: "WATCHING",
   });
 });
 
