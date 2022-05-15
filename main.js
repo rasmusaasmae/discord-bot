@@ -1,15 +1,16 @@
 const discord = require("discord.js");
 const Enmap = require("enmap");
 const fs = require("fs");
+const chalk = require("chalk");
+const config = require("./config/config.json");
 
+// Discord client
 const client = new discord.Client({
   intents: [discord.Intents.FLAGS.GUILDS, discord.Intents.FLAGS.GUILD_MESSAGES],
 });
-const config = require("./config/config.json");
-client.commands = new Enmap();
-chalk = require("chalk");
 client.config = config;
 
+// Read and bind events (message received and option chosen from menu)
 fs.readdir("./events/", (err, files) => {
   if (err) return console.error(err);
   files.forEach((file) => {
@@ -19,8 +20,8 @@ fs.readdir("./events/", (err, files) => {
   });
 });
 
+// Setting up commands
 client.commands = new Enmap();
-
 fs.readdir("./commands/", (err, files) => {
   if (err) return console.error(err);
   files.forEach((file) => {
@@ -32,8 +33,12 @@ fs.readdir("./commands/", (err, files) => {
   });
 });
 
+// Set activity when bot is ready
 client.on("ready", () => {
-  client.user.setActivity("all your private messages", { type: "WATCHING" });
+  client.user.setActivity(`for the command ${config.prefix}help`, {
+    type: "COMPETING",
+  });
 });
 
+// Login client
 client.login(config.token);
