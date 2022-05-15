@@ -1,6 +1,7 @@
 const discord = require("discord.js");
 const { prefix, color } = require("../config/config.json");
 
+// Sends message which lists all commands and what they do
 exports.run = (client, message, args) => {
   const help = new discord.MessageEmbed()
     .setColor(color)
