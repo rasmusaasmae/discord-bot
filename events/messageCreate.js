@@ -1,3 +1,4 @@
+// Called when message received
 module.exports = (client, message) => {
   // Ignore all bots
   if (message.author.bot) return;
