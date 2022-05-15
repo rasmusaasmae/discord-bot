@@ -1,7 +1,7 @@
 {
   "name": "ik-bot",
   "version": "1.0.0",
-  "description": "Bot for managing a movie list.",
+  "description": "Bot for managing a movie list and gettign data from YTS.",
   "main": "main.js",
   "author": "Rasmus",
   "dependencies": {
