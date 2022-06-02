@@ -2,7 +2,7 @@ const discord = require("discord.js");
 const axios = require("axios");
 const chalk = require("chalk");
 const _ = require("underscore");
-const { color } = require("../config/config.json");
+const { color } = require("./config/config.json");
 
 exports.run = (client, message, args) => {
   const { guildId } = message;
