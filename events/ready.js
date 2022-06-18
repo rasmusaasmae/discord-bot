@@ -1,5 +1,5 @@
 const chalk = require("chalk");
-const config = require("../config/config.json");
+const { prefix } = require("../config/config.json");
 
 // Log that plot is ready
 module.exports = (client) => {
@@ -7,6 +7,6 @@ module.exports = (client) => {
     type: "WATCHING",
   });
   console.log(chalk.green("Bot ready!"));
-  console.log(chalk.green(`Prefix is ${config.prefix}`));
+  console.log(chalk.green(`Prefix is ${prefix}`));
   console.log(chalk.blue("Made by Rasmus#1234"));
 };
