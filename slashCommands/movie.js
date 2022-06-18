@@ -69,11 +69,11 @@ let movieData = {
   /*
   guildId_1: {
     movieList: [],
-    searchResults: {},
     movieListMsgId: null
   }
   */
 };
+let searchResults = {};
 fs.readFile("./data/movieData.json", "utf-8", (err, data) => {
   if (err) {
     console.log(chalk.red("No data loaded."));
@@ -113,7 +113,7 @@ function checkGuild(interaction) {
   const { guildId } = interaction;
   if (!movieData[guildId]) movieData[guildId] = {};
   if (!movieData[guildId].movieList) movieData[guildId].movieList = [];
-  if (!movieData[guildId].searchResults) movieData[guildId].searchResults = {};
+  if (!searchResults[guildId]) searchResults[guildId] = {};
 }
 
 // Search for movies in the YTS database
@@ -185,7 +185,7 @@ async function searchMovies(interaction, commandType) {
           user: interaction.user.username,
         };
 
-        movieData[guildId].searchResults[movie.id.toString()] = m;
+        searchResults[guildId][movie.id.toString()] = m;
       }
 
       embed
@@ -233,7 +233,7 @@ async function addSelectedMovie(interaction, id) {
       embeds: [embed.setTitle(`No movie chosen.`)],
       components: [],
     });
-  const movie = movieData[interaction.guildId].searchResults[id];
+  const movie = searchResults[interaction.guildId][id];
   if (movie) {
     embed.setTitle(`You added ${movie.title_long} to the list.`);
     movieData[interaction.guildId].movieList.push(movie);
@@ -395,7 +395,7 @@ function updateMovieListMsg(interaction) {
 function clearMovieList(interaction) {
   checkGuild(interaction);
   movieData[interaction.guildId].movieList = [];
-  movieData[interaction.guildId].searchResults = {};
+  searchResults[interaction.guildId] = {};
   updateMovieListMsg(interaction);
   saveState();
   const embed = new discord.MessageEmbed()
@@ -430,7 +430,7 @@ function getSelectedTorrent(interaction, id) {
   const embed = new discord.MessageEmbed()
     .setColor(color)
     .setTitle("Movie not found.");
-  const movie = movieData[interaction.guildId].searchResults[id];
+  const movie = searchResults[interaction.guildId][id];
   if (movie) {
     embed.setTitle(`Torrent`);
     embed.addField(movie.title_long, movie.torrent);
