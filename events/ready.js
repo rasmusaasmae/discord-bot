@@ -7,6 +7,6 @@ module.exports = (client) => {
     type: "WATCHING",
   });
   console.log(chalk.green("Bot ready!"));
-  console.log(chalk.yellow(`Prefix is ${config.prefix}`));
+  console.log(chalk.green(`Prefix is ${config.prefix}`));
   console.log(chalk.blue("Made by Rasmus#1234"));
 };

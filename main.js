@@ -50,7 +50,7 @@ const commandFiles = fs
 const clientId = config.clientId;
 const guildId = config.guildId;
 for (const file of commandFiles) {
-  console.log(chalk.yellow(`/${file.split(".")[0]}`));
+  console.log(chalk.green(`/${file.split(".")[0]}`));
   const command = require(`./slashCommands/${file}`);
   commands.push(command.data.toJSON());
 }
@@ -63,9 +63,9 @@ const rest = new REST({ version: "9" }).setToken(config.token);
       body: commands,
     });
 
-    console.log("Successfully reloaded application (/) commands.");
+    console.log(chalk.green("Successfully reloaded application (/) commands."));
   } catch (error) {
-    console.error(error);
+    console.log(chalk.red("Failed to update application (/) commands."));
   }
 })();
 

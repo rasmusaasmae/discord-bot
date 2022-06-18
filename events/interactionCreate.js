@@ -7,28 +7,22 @@ module.exports = (client, interaction) => {
       case "movie":
         switch (interaction.options._subcommand) {
           case "add":
-            movie.add(interaction);
+            movie.addMovie(interaction);
             break;
           case "remove":
-            movie.execute(interaction);
+            movie.removeMovie(interaction);
             break;
           case "list":
-            movie.list(interaction);
+            movie.listMovies(interaction);
             break;
           case "clear":
-            movie.clearMessages(interaction);
+            movie.clearMovieList(interaction);
             break;
           case "randomise":
-            movie.execute(interaction);
-            break;
-          case "torrents":
-            movie.execute(interaction);
+            movie.randomiseMovieList(interaction);
             break;
           case "torrent":
             movie.torrent(interaction);
-            break;
-          case "clearmessages":
-            movie.clearMessages(interaction);
             break;
 
           default:
@@ -40,15 +34,22 @@ module.exports = (client, interaction) => {
         break;
     }
   } else if (interaction.isSelectMenu()) {
-    // Selection menu
-    if (interaction.customId === "movieAddMenu") {
-      // Movie adding menu
-      const id = interaction.values[0];
-      movie.addMovie(interaction, id);
-    } else if (interaction.customId === "movieTorrentMenu") {
-      // Movie torrent menu
-      const id = interaction.values[0];
-      movie.getTorrent(interaction, id);
+    const id = interaction.values[0];
+    switch (interaction.customId) {
+      case "movieAddMenu":
+        // Movie adding menu
+        movie.addSelectedMovie(interaction, id);
+        break;
+      case "movieTorrentMenu":
+        // Movie torrent menu
+        movie.getSelectedTorrent(interaction, id);
+        break;
+      case "movieRemoveMenu":
+        // Movie removing menu
+        movie.removeSelectedMovie(interaction, id);
+        break;
+      default:
+        break;
     }
   }
 };

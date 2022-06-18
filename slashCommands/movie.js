@@ -52,12 +52,6 @@ const command = new SlashCommandBuilder()
       .setName("randomise")
       .setDescription("Randomise the order of the movies")
   )
-
-  .addSubcommand((subcommand) =>
-    subcommand
-      .setName("torrents")
-      .setDescription("List the movies with their torrents")
-  )
   .addSubcommand((subcommand) =>
     subcommand
       .setName("torrent")
@@ -68,61 +62,68 @@ const command = new SlashCommandBuilder()
           .setDescription("Title of the movie")
           .setRequired(true)
       )
-  )
-  .addSubcommand((subcommand) =>
-    subcommand
-      .setName("clearmessages")
-      .setDescription("Clear the messages sent by the bot")
   );
 
 // Load/initialise movie data
-let movieData = {};
+let movieData = {
+  /*
+  guildId_1: {
+    movieList: [],
+    searchResults: {},
+    movieListMsgId: null
+  }
+  */
+};
 fs.readFile("./data/movieData.json", "utf-8", (err, data) => {
-  if (err) return console.log(err);
-  movieData = JSON.parse(data.toString());
-  console.log("LOADED:");
-  console.log(movieData);
+  if (err) {
+    console.log(chalk.red("No data loaded."));
+    // console.error(err);
+    return;
+  }
+  try {
+    movieData = JSON.parse(data.toString());
+  } catch (error) {
+    console.log(chalk.red("Data parsing failed."));
+    // console.error(error);
+    return;
+  }
+  console.log(chalk.green("Data loaded."));
 });
 
 // Save current movie data state to file
 function saveState() {
-  console.log("SAVING:");
-  console.log(movieData);
-  const data = JSON.stringify(movieData);
-
-  fs.writeFile("./data/movieData.json", data, (err) => {
-    if (err) return console.log(err);
-    console.log("JSON data is saved.");
-  });
-}
-
-// Save the interaction so that it can be removed later
-function saveInteraction(interaction) {
-  checkGuild(interaction);
-  const { guildId, channelId } = interaction;
-  movieData[guildId].interactions[channelId].push(interaction);
+  try {
+    const data = JSON.stringify(movieData);
+    fs.writeFile("./data/movieData.json", data, (err) => {
+      if (err) {
+        console.log(chalk.red("Saving failed. Writing to file failed."));
+        // console.error(err);
+        return;
+      }
+      // console.log(chalk.green("Data saved."));
+    });
+  } catch (error) {
+    console.log(chalk.red("Saving failed. Parsing failed."));
+    // console.error(error);
+  }
 }
 
 // Check that data exists for guild
 function checkGuild(interaction) {
-  const { guildId, channelId } = interaction;
+  const { guildId } = interaction;
   if (!movieData[guildId]) movieData[guildId] = {};
   if (!movieData[guildId].movieList) movieData[guildId].movieList = [];
   if (!movieData[guildId].searchResults) movieData[guildId].searchResults = {};
-  if (!movieData[guildId].interactions) movieData[guildId].interactions = {};
-  if (!movieData[guildId].interactions[channelId])
-    movieData[guildId].interactions[channelId] = [];
 }
 
 // Search for movies in the YTS database
-async function searchMovies(interaction, reply) {
+async function searchMovies(interaction, commandType) {
   await interaction.deferReply({
     content: "Searching for movies...",
     ephemeral: true,
   });
   checkGuild(interaction);
   const { guildId } = interaction;
-  saveInteraction(interaction);
 
   const query = interaction.options._hoistedOptions[0].value;
   const embed = new discord.MessageEmbed().setColor(color);
@@ -133,7 +134,7 @@ async function searchMovies(interaction, reply) {
     .then((result) => {
       const movies = result["data"]["data"]["movies"];
       if (movies == undefined) {
-        embed.setTitle(`No movies found for term '${query}'`);
+        embed.setTitle(`No movies found for term '${query}'.`);
         interaction.editReply({ embeds: [embed] });
         return;
       }
@@ -144,7 +145,6 @@ async function searchMovies(interaction, reply) {
           value: "NO_MOVIE_CHOSEN",
         },
       ];
-
       for (let movie of movies) {
         const { id, imdb_code, torrents } = movie;
         let { title_long } = movie;
@@ -177,7 +177,13 @@ async function searchMovies(interaction, reply) {
           }
         }
         // Creating movie object
-        const m = { id, title_long, torrent, imdb_code };
+        const m = {
+          id,
+          title_long,
+          torrent,
+          imdb_code,
+          user: interaction.user.username,
+        };
 
         movieData[guildId].searchResults[movie.id.toString()] = m;
       }
@@ -185,7 +191,6 @@ async function searchMovies(interaction, reply) {
       embed
         .setTitle(`Results for '${query}':`)
         .addFields(...movieFields)
-        .setTimestamp()
         .setFooter({
           text: "Data from YTS",
         });
@@ -194,8 +199,9 @@ async function searchMovies(interaction, reply) {
         .setPlaceholder("No movie selected")
         .addOptions([selectMenuFields]);
 
-      if (reply === "add") selectMenu.setCustomId("movieAddMenu");
-      else if (reply === "torrent") selectMenu.setCustomId("movieTorrentMenu");
+      if (commandType === "add") selectMenu.setCustomId("movieAddMenu");
+      else if (commandType === "torrent")
+        selectMenu.setCustomId("movieTorrentMenu");
 
       const messageRow = new discord.MessageActionRow().addComponents(
         selectMenu
@@ -203,9 +209,13 @@ async function searchMovies(interaction, reply) {
       interaction.editReply({ embeds: [embed], components: [messageRow] });
     })
     .catch((error) => {
-      console.log(chalk.red(`Error in searchMovies(message, ${query})`));
-      console.error(error);
-      embed.setTitle(`Error occurred for query '${query}'`);
+      console.log(
+        chalk.red(
+          `Error getting movies or manipulating data. Query '${query}'.`
+        )
+      );
+      // console.error(error);
+      embed.setTitle(`Error occurred.`);
       interaction.editReply({ embeds: [embed] });
       return;
     });
@@ -213,74 +223,223 @@ async function searchMovies(interaction, reply) {
 }
 
 // Add movie to the list
-async function addMovie(interaction, id) {
+async function addSelectedMovie(interaction, id) {
   checkGuild(interaction);
-  const movie = movieData[interaction.guildId].searchResults[id];
-  if (!movie) {
-    interaction.update({
-      content: "Error finding movie",
-      embeds: [],
+  const embed = new discord.MessageEmbed()
+    .setColor(color)
+    .setTitle("Movie not found.");
+  if (id === "NO_MOVIE_CHOSEN")
+    return interaction.update({
+      embeds: [embed.setTitle(`No movie chosen.`)],
       components: [],
-      ephemeral: false,
     });
-  } else {
+  const movie = movieData[interaction.guildId].searchResults[id];
+  if (movie) {
+    embed.setTitle(`You added ${movie.title_long} to the list.`);
     movieData[interaction.guildId].movieList.push(movie);
-    interaction.update({
-      content: `${movie.title_long} was added to the list.`,
-      embeds: [],
-      components: [],
-      ephemeral: false,
-    });
+    updateMovieListMsg(interaction);
+    saveState();
   }
-  saveState();
-}
-
-// Remove movie(s) from the list
-
-// List
-
-// Clear
-
-// Randomise
-
-// Torrents
-
-// Torrent
-function getTorrent(interaction, id) {
-  checkGuild(interaction);
-  const movie = movieData[interaction.guildId].searchResults[id];
-  if (!movie) {
-    interaction.editReply({ content: "Error finding movie", ephemeral: false });
-  } else {
-    interaction.editReply({
-      content: `${movie.title_long}\n${movie.torrent}`,
-      ephemeral: false,
-    });
-  }
-}
-
-// Delete messages sent by the bot
-function clearMessages(interaction) {
-  interaction.deferReply({
-    content: "Clearing messages...",
+  interaction.update({
+    embeds: [embed],
+    components: [],
     ephemeral: true,
   });
+}
+
+// Remove movie from the list
+async function removeMovie(interaction) {
   checkGuild(interaction);
-  saveInteraction(interaction);
-  const { guildId, channelId } = interaction;
-  for (let i of movieData[guildId].interactions[channelId]) {
-    try {
-      i.deleteReply();
-    } catch (error) {
-      console.log("Nope");
+  const query = interaction.options._hoistedOptions[0].value;
+  const embed = new discord.MessageEmbed()
+    .setColor(color)
+    .setTitle(`Select movie to be removed:`);
+  const selectMenuFields = [
+    {
+      label: "CHOOSE NONE",
+      value: "NO_MOVIE_CHOSEN",
+    },
+  ];
+  const movies = movieData[interaction.guildId].movieList;
+  for (let i = 0; i < movies.length; i++) {
+    if (movies[i].title_long.toLowerCase().includes(query)) {
+      const { title_long, id } = movies[i];
+      if (title_long.length > 100) {
+        title_long = title_long.substring(0, 100);
+      }
+      selectMenuFields.push({
+        label: title_long,
+        value: id.toString(),
+      });
     }
   }
-  delete movieData[guildId].interactions[channelId];
-  interaction.editReply({
-    content: "Messages cleared",
-    ephemeral: false,
+
+  const selectMenu = new discord.MessageSelectMenu()
+    .setPlaceholder("No movie selected")
+    .addOptions([selectMenuFields])
+    .setCustomId("movieRemoveMenu");
+
+  const messageRow = new discord.MessageActionRow().addComponents(selectMenu);
+  interaction.reply({
+    embeds: [embed],
+    components: [messageRow],
+    ephemeral: true,
   });
+}
+
+async function removeSelectedMovie(interaction, id) {
+  checkGuild(interaction);
+  const embed = new discord.MessageEmbed()
+    .setColor(color)
+    .setTitle(`No movie chosen.`);
+  if (id === "NO_MOVIE_CHOSEN")
+    return interaction.update({
+      embeds: [embed],
+      components: [],
+    });
+
+  for (let i = 0; i < movieData[interaction.guildId].movieList.length; i++) {
+    if (movieData[interaction.guildId].movieList[i].id.toString() === id) {
+      embed.setTitle(
+        `You removed '${
+          movieData[interaction.guildId].movieList[i].title_long
+        }' from the list.`
+      );
+      interaction.update({
+        embeds: [embed],
+        components: [],
+      });
+      movieData[interaction.guildId].movieList.splice(i, 1);
+      updateMovieListMsg(interaction);
+      saveState();
+      return;
+    }
+  }
+  embed.setTitle(`Movie was not found.`);
+  interaction.update({
+    embeds: [embed],
+    components: [],
+  });
+}
+
+// List
+async function listMovies(interaction) {
+  const embed = getMovieListEmbed(interaction);
+  const id = movieData[interaction.guildId].movieListMsgId;
+  // Delete old list msg
+  if (id) {
+    try {
+      interaction.channel.messages
+        .fetch(id)
+        .then((msg) => msg.delete())
+        .catch((err) => {
+          console.log(
+            chalk.red("Didn't find movie list message to be deleted.")
+          );
+          // console.error(err);
+        });
+    } catch (error) {
+      console.log(chalk.red("Failed to delete old movie list msg."));
+      // console.error(error);
+    }
+  }
+  const reply = await interaction.reply({
+    content: "Listing movies.",
+    fetchReply: true,
+  });
+  reply.delete();
+  const msg = await interaction.channel.send({
+    embeds: [embed],
+    fetchReply: true,
+  });
+  movieData[interaction.guildId].movieListMsgId = msg.id;
+}
+
+function getMovieListEmbed(interaction) {
+  checkGuild(interaction);
+  const embed = new discord.MessageEmbed().setColor(color);
+  const movies = movieData[interaction.guildId].movieList;
+
+  embed.setTitle(`There are no movies in the list.`);
+  if (movies.length !== 0) {
+    embed.setTitle(`There are ${movies.length} movies in the list:`);
+    if (movies.length === 1) embed.setTitle(`There is 1 movie in the list`);
+    const movieFields = [];
+    for (let movie of movies) {
+      const { torrent, title_long, user } = movie;
+      movieFields.push({
+        name: `${user}: ${title_long}`,
+        value: torrent.url,
+      });
+    }
+    embed.addFields(...movieFields);
+  }
+  return embed;
+}
+
+function updateMovieListMsg(interaction) {
+  const id = movieData[interaction.guildId].movieListMsgId;
+  if (!id) return;
+  const embed = getMovieListEmbed(interaction);
+
+  interaction.channel.messages
+    .fetch(id)
+    .then((msg) => msg.edit({ embeds: [embed] }))
+    .catch((err) => {
+      console.log(chalk.red("Couldn't update movie list msg."));
+      // console.error(err);
+    });
+}
+
+// Clear
+function clearMovieList(interaction) {
+  checkGuild(interaction);
+  movieData[interaction.guildId].movieList = [];
+  movieData[interaction.guildId].searchResults = {};
+  updateMovieListMsg(interaction);
   saveState();
+  const embed = new discord.MessageEmbed()
+    .setColor(color)
+    .setTitle("You cleared the movie list.");
+  interaction.reply({
+    embeds: [embed],
+    ephemeral: true,
+  });
+}
+
+// Randomise
+function randomiseMovieList(interaction) {
+  checkGuild(interaction);
+  movieData[interaction.guildId].movieList = _.shuffle(
+    movieData[interaction.guildId].movieList
+  );
+  updateMovieListMsg(interaction);
+  saveState();
+  const embed = new discord.MessageEmbed()
+    .setColor(color)
+    .setTitle("You randomised the order of the movie list.");
+  interaction.reply({
+    embeds: [embed],
+    ephemeral: true,
+  });
+}
+
+// Torrent
+function getSelectedTorrent(interaction, id) {
+  checkGuild(interaction);
+  const embed = new discord.MessageEmbed()
+    .setColor(color)
+    .setTitle("Movie not found.");
+  const movie = movieData[interaction.guildId].searchResults[id];
+  if (movie) {
+    embed.setTitle(`Torrent`);
+    embed.addField(movie.title_long, movie.torrent);
+  }
+  interaction.update({
+    embeds: [embed],
+    components: [],
+    ephemeral: true,
+  });
 }
 
 // Export commands
@@ -289,22 +448,17 @@ module.exports = {
   async execute(interaction) {
     return interaction.reply("Not implemented");
   },
-  async add(interaction) {
+  async addMovie(interaction) {
     searchMovies(interaction, "add");
-  },
-  async list(interaction) {
-    return interaction.reply(`List`);
   },
   async torrent(interaction) {
     searchMovies(interaction, "torrent");
   },
-  async clearMessages(interaction) {
-    clearMessages(interaction);
-  },
-  async getTorrent(interaction, id) {
-    getTorrent(interaction, id);
-  },
-  addMovie(interaction, id) {
-    addMovie(interaction, id);
-  },
+  listMovies,
+  getSelectedTorrent,
+  addSelectedMovie,
+  removeMovie,
+  removeSelectedMovie,
+  clearMovieList,
+  randomiseMovieList,
 };
