@@ -225,20 +225,27 @@ async function searchMovies(interaction, commandType) {
 // Add movie to the list
 async function addSelectedMovie(interaction, id) {
   checkGuild(interaction);
-  const embed = new discord.MessageEmbed()
-    .setColor(color)
-    .setTitle("Movie not found.");
-  if (id === "NO_MOVIE_CHOSEN")
-    return interaction.update({
-      embeds: [embed.setTitle(`No movie chosen.`)],
-      components: [],
-    });
-  const movie = searchResults[interaction.guildId][id];
-  if (movie) {
-    embed.setTitle(`You added ${movie.title_long} to the list.`);
-    movieData[interaction.guildId].movieList.push(movie);
-    updateMovieListMsg(interaction);
-    saveState();
+  const embed = new discord.MessageEmbed().setColor(color);
+  if (id === "NO_MOVIE_CHOSEN") {
+    embed.setTitle(`No movie chosen.`);
+  } else {
+    const movie = searchResults[interaction.guildId][id];
+    if (!movie) {
+      embed.setTitle("Movie not found.");
+    } else {
+      let movieInList = false;
+      for (let m of movieData[interaction.guildId].movieList) {
+        if (movie.id === m.id) movieInList = true;
+      }
+      if (movieInList) {
+        embed.setTitle(`${movie.title_long} is already in the list.`);
+      } else {
+        embed.setTitle(`You added ${movie.title_long} to the list.`);
+        movieData[interaction.guildId].movieList.push(movie);
+        updateMovieListMsg(interaction);
+        saveState();
+      }
+    }
   }
   interaction.update({
     embeds: [embed],
