@@ -5,6 +5,8 @@
   "main": "main.js",
   "author": "Rasmus",
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.113.0",
+    "@aws-sdk/lib-dynamodb": "^3.113.0",
     "@discordjs/rest": "^0.4.1",
     "axios": "^0.27.2",
     "chalk": "^4.1.2",

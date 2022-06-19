@@ -10,7 +10,6 @@ const Enmap = require("enmap");
 const chalk = require("chalk");
 // Config
 const { prefix } = require("./config/config.json");
-
 // https://discord.com/api/oauth2/authorize?client_id=972280856213323827&permissions=10774375504&scope=bot%20applications.commands
 
 // Config variables
