@@ -95,6 +95,7 @@ async function searchMovies(interaction, commandType) {
   axios
     .get("https://yts.torrentbay.to/api/v2/list_movies.json", {
       params: { query_term: query },
+      withCredentials: true,
     })
     .then((result) => {
       const movies = result["data"]["data"]["movies"];
