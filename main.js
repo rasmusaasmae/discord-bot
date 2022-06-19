@@ -19,7 +19,6 @@ let config = {
   DISCORD_GUILD_ID: process.env.DISCORD_GUILD_ID,
   DISCORD_TOKEN: process.env.DISCORD_TOKEN,
 };
-console.log(config);
 
 // Discord client
 const client = new discord.Client({

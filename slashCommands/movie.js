@@ -427,13 +427,16 @@ function randomiseMovieList(interaction) {
 // Torrent
 function getSelectedTorrent(interaction, id) {
   checkGuild(interaction);
-  const embed = new discord.MessageEmbed()
-    .setColor(color)
-    .setTitle("Movie not found.");
-  const movie = searchResults[interaction.guildId][id];
-  if (movie) {
-    embed.setTitle(`Torrent`);
-    embed.addField(movie.title_long, movie.torrent);
+  const embed = new discord.MessageEmbed().setColor(color);
+  if (id === "NO_MOVIE_CHOSEN") {
+    embed.setTitle(`No movie chosen.`);
+  } else {
+    const movie = searchResults[interaction.guildId][id];
+    if (!movie) {
+      embed.setTitle("Movie not found.");
+    } else {
+      embed.addField(movie.title_long, movie.torrent.url);
+    }
   }
   interaction.update({
     embeds: [embed],
