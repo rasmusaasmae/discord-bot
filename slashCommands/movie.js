@@ -219,7 +219,6 @@ async function searchMovies(interaction, commandType) {
       interaction.editReply({ embeds: [embed] });
       return;
     });
-  saveState();
 }
 
 // Add movie to the list
