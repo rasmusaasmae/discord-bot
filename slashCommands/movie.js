@@ -69,9 +69,9 @@ let searchResults = {};
 
 async function getMovieData(guildId) {
   const movieData = await ddbGetItem(guildId);
-  console.log(movieData);
   if (movieData) return movieData;
   searchResults[guildId] = {};
+  console.log(`${guildId} was not in database.`);
   return {
     movieList: [],
   };
