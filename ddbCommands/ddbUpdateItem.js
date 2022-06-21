@@ -5,7 +5,7 @@ const chalk = require("chalk");
 const ddbUpdateItem = async (guildId, item) => {
   // Set the parameters.
   const params = {
-    TableName: "discord-bot-db",
+    TableName: process.env.DDB_TABLE_NAME,
     Key: {
       guildId: guildId,
     },

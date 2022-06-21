@@ -4,13 +4,13 @@ const chalk = require("chalk");
 
 // Set the parameters.
 const params = {
-  TableName: "discord-bot-db",
+  TableName: process.env.DDB_TABLE_NAME,
   Key: {},
 };
 
 const getItem = async (guildId) => {
   try {
-    params.Key["guildId"] = guildId.toString();
+    params.Key[process.env.DDB_KEY] = guildId.toString();
     const data = await ddbDocClient.send(new GetCommand(params));
     return data.Item;
   } catch (err) {
